@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <title>
+        </title>
+        <meta charset="UTF-8" http-equiv="content-type" content="text/html">
+        <link rel="stylesheet" media="screen" type="text/css" href="" >
+        <script src="https://unpkg.com/vue@next"></script>
+        <style>
+            *{
+                font-family: Rockwell;
+            }
+            .check{
+                text-decoration: line-through;
+            }
+            body{
+                background-color: #8bebff;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            #app{
+                margin: 0 auto;
+                border: 1px solid black;
+                padding: 30px 20px 10px 20px;
+                border-radius: 30px;
+                background-color: #ff9f8b;
+            }
+            #app ul{
+                border: 1px solid black;
+                border-radius: 30px 30px 0 0;
+                padding: 0 20px 0 20px;
+                background-color: whitesmoke;
+                margin-bottom: 0;
+            }
+            li{
+                list-style-type: none;
+            }
+            #app p{
+                margin-top: 0;
+                border-radius: 0 0 30px 30px;
+                background-color: whitesmoke;
+                border: 1px solid black;
+                padding: 0 20px 0 20px;
+            }
+            p span{
+                color: blue;
+            }
+            button{
+                border-radius: 8px;
+            }  
+            .list-enter-active{
+                transition: opacity 1s ease-out;
+            } 
+            .list-leave-active {
+                transition: all 1s ease-in;
+            }
+            .list-enter-from{
+                opacity: 0;
+            }
+            .list-leave-to {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+        </style>
+    </head>
+    <body>
+        <div id = 'app'>
+            <input placeholder="Introduzca su tarea" v-model='inp.desc'>
+            <select v-model='inp.prio'>
+                <option value='Baja'>Baja</option>
+                <option value='Media'>Media</option>
+                <option value='Alta'>Alta</option>
+            </select>
+            <button v-on:click='crearTarea'>Guardar Tarea</button>
+            <hr>
+            <input v-model='search' placeholder="Buscar tarea">
+            <ul>
+                <transition-group name="list" tag="span">
+                <li :class="{ check: el.check }" v-for='(el,index) in sortedList' :key='item'>
+                    <input type="checkbox" v-bind:checked="el.check" v-on:click=toggleCheck(index)>{{ el.desc }}, Hace {{ el.mincrea }}  minutos, {{el.prio}}
+                    <button v-on:click='ajustPrio(index,1)'>+</button>
+                    <button v-on:click='ajustPrio(index,-1)'>-</button>
+                    <button v-on:click='deleteTarea(index)'>Borrar</button>
+                </li>
+                </transition-group>
+            </ul>
+            <p>
+                {{totalDone}}/{{totalTask}} Tareas hechas || Mostrar:
+                <span v-on:click='toggleDiplay(0)'>Todas</span>|
+                <span v-on:click='toggleDiplay(2)'>Completadas</span>|
+                <span v-on:click='toggleDiplay(1)'>Pendientes</span> || 
+                <button v-on:click='deleteCompleted'>Borrar completadas</button>
+            </p>
+        </div>
+        <script>
+
+            const app = {
+                data(){
+                    return{
+                        lista: [],
+                        inp:{desc:'',prio:''},
+                        disp:0,
+                        search:''
+                    }
+                },
+                methods:{
+                    crearTarea(){
+                        if (this.inp.desc!='' && this.inp.prio!=''){
+                            this.lista.push({desc:this.inp.desc,fecha:Date.now(),mincrea:0,prio:this.inp.prio,check:false})
+                            this.saveToStorage()
+                        }
+                    },
+                    ajustPrio(index,ajust){
+                        if (this.lista[index].prio=='Alta'){
+                            this.lista[index].prio = (ajust == -1)?'Media':'Alta'
+                        }else if(this.lista[index].prio=='Media'){
+                            this.lista[index].prio = (ajust == -1)?'Baja':'Alta'
+                        }else{
+                            this.lista[index].prio = (ajust == -1)?'Baja':'Media'
+                        }
+                    },
+                    saveToStorage(){
+                        localStorage.setItem("listaTareas",JSON.stringify(this.lista))
+                    },
+                    deleteTarea(index){
+                        this.lista.splice(index,1)
+                        this.saveToStorage()
+                    },
+                    toggleCheck(index){
+                        this.lista[index].check=(this.lista[index].check)?false:true
+                        this.saveToStorage()
+                    },
+                    toggleDiplay(val){
+                        this.disp = val
+                    },
+                    deleteCompleted(){
+                        this.lista = this.lista.filter(this.deleteFilter)
+                        this.saveToStorage()
+                    },
+                    sortKey(a,b){
+                        prioa = (a.prio == 'Alta')?3:(a.prio == 'Media')?2:1
+                        priob = (b.prio == 'Alta')?3:(b.prio == 'Media')?2:1
+                        return priob - prioa
+                    },
+                    displayFilter(val){
+                        if (this.disp == 2){
+                            return (val.check)?true:false
+                        }else if(this.disp == 1){
+                            return (val.check)?false:true
+                        }else{
+                            return true
+                        }
+                    },
+                    deleteFilter(val){
+                        return (val.check)?false:true
+                    },
+                    searchFilter(val){
+                        return val.desc.includes(this.search)
+                    },
+                    counterFunc(acu,el){
+                        return (el.check)?acu+1:acu
+                    },
+                },
+                mounted(){
+                    setInterval(()=>{
+                        for (e of this.lista){
+                            e.mincrea = Math.floor((Date.now() - e.fecha)/60000)
+                            this.saveToStorage()
+                        }
+                    },30000)
+                },
+                computed:{
+                    sortedList(){
+                        let resul = this.lista.sort(this.sortKey).filter(this.displayFilter)
+                        return (this.search != '')?resul.filter(this.searchFilter):resul
+                    },
+                    totalTask(){
+                        return this.lista.length
+                    },
+                    totalDone(){
+                        return this.lista.reduce(this.counterFunc,0)
+                    }
+                },
+                created(){
+                    if (localStorage.listaTareas){
+                        this.lista = JSON.parse(localStorage.listaTareas)
+                    }
+                }
+            }
+        window.onload = ()=>{
+            Vue.createApp(app).mount('#app')
+        }
+        </script>
+    </body>
+</html>
