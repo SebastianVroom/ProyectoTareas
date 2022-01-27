@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <title>
+        </title>
+        <meta charset="UTF-8" http-equiv="content-type" content="text/html">
+        <link rel="stylesheet" media="screen" type="text/css" href="index.css" >
+        <script src="https://unpkg.com/vue@next"></script>
+        <script src='index.js'></script>
+        <style>
+            
+        </style>
+    </head>
+    <body>
+        <div id = 'app'>
+            <input placeholder="Introduzca su tarea" v-model='inp.desc'>
+            <select v-model='inp.prio'>
+                <option value='Baja'>Baja</option>
+                <option value='Media'>Media</option>
+                <option value='Alta'>Alta</option>
+            </select>
+            <button v-on:click='crearTarea'>Guardar Tarea</button>
+            <hr>
+            <input v-model='search' placeholder="Buscar tarea">
+            <ul>
+                <transition-group name="list" tag="span">
+                <li :class="{ check: el.check }" v-for='(el,index) in sortedList' :key='item'>
+                    <input type="checkbox" v-bind:checked="el.check" v-on:click=toggleCheck(index)>{{ el.desc }}, Hace {{ el.mincrea }}  minutos, {{el.prio}}
+                    <button v-on:click='ajustPrio(index,1)'>+</button>
+                    <button v-on:click='ajustPrio(index,-1)'>-</button>
+                    <button v-on:click='deleteTarea(index)'>Borrar</button>
+                </li>
+                </transition-group>
+            </ul>
+            <p>
+                {{totalDone}}/{{totalTask}} Tareas hechas || Mostrar:
+                <span v-on:click='toggleDiplay(0)'>Todas</span>|
+                <span v-on:click='toggleDiplay(2)'>Completadas</span>|
+                <span v-on:click='toggleDiplay(1)'>Pendientes</span> || 
+                <button v-on:click='deleteCompleted'>Borrar completadas</button>
+            </p>
+        </div>
+    </body>
+</html>
